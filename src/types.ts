@@ -14,8 +14,7 @@ export enum TaskStatus {
 export enum TaskPriority {
   LOW = "Low",
   MEDIUM = "Medium",
-  HIGH = "High",
-  HIGHT = "Hight"
+  HIGH = "High"
 }
 
 export interface Task {
@@ -40,4 +39,12 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
   actions?: ChatAction[];
+}
+
+export interface UserProfile {
+  name: string;
+  emailOrPhone: string;
+  provider: "google" | "apple" | "facebook" | "gmail" | "phone";
+  avatarUrl?: string;
+  phoneCountryCode?: string;
 }

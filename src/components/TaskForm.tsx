@@ -114,7 +114,6 @@ export default function TaskForm({ taskToEdit, onSubmit, onCancel }: TaskFormPro
                 <option value={TaskPriority.LOW}>Low</option>
                 <option value={TaskPriority.MEDIUM}>Medium</option>
                 <option value={TaskPriority.HIGH}>High</option>
-                <option value={TaskPriority.HIGHT}>Hight</option>
               </select>
             </div>
 

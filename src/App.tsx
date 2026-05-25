@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Task, TaskPriority, TaskStatus, ChatMessage, ChatAction } from "./types";
+import { Task, TaskPriority, TaskStatus, ChatMessage, ChatAction, UserProfile } from "./types";
 import { INITIAL_TASKS } from "./initial_tasks";
 import ChatPanel from "./components/ChatPanel";
 import TaskItem from "./components/TaskItem";
 import TaskForm from "./components/TaskForm";
-import { Sparkles, Terminal, Shield, RefreshCw, Layers, Plus, Search, Filter, Trash, Play, RefreshCcw } from "lucide-react";
+import AuthScreen from "./components/AuthScreen";
+import { Sparkles, Terminal, Shield, RefreshCw, Layers, Plus, Search, Filter, Trash, Play, RefreshCcw, LogOut } from "lucide-react";
 
 const INITIAL_MESSAGES: ChatMessage[] = [
   {
@@ -54,6 +55,23 @@ export default function App() {
   const [terminalLogs, setTerminalLogs] = useState<string[]>(INITIAL_LOGS);
   const [activeSidebar, setActiveSidebar] = useState<"chat" | "tasks" | "settings" | "docker">("chat");
   const [isPending, setIsPending] = useState(false);
+
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    const saved = localStorage.getItem("high_density_user");
+    try {
+      return saved ? JSON.parse(saved) : null;
+    } catch (_) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("high_density_user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("high_density_user");
+    }
+  }, [user]);
   
   // Tasks filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -327,6 +345,20 @@ export default function App() {
   const completedCount = tasks.filter((t) => t.status === TaskStatus.DONE || t.status === TaskStatus.COMPLETED || t.status.toLowerCase() === "done" || t.status.toLowerCase() === "completed").length;
   const pendingCount = totalItemCount - completedCount;
 
+  if (!user) {
+    return (
+      <AuthScreen 
+        onLoginSuccess={(authorizedUser) => {
+          setUser(authorizedUser);
+          setTerminalLogs((prev) => [
+            ...prev,
+            `[${new Date().toLocaleTimeString()}] [AUTH] Successfully authenticated as "${authorizedUser.name}" via ${authorizedUser.provider.toUpperCase()}.`
+          ]);
+        }} 
+      />
+    );
+  }
+
   return (
     <div id="workspace-root" className="h-screen w-full bg-[#0F1115] text-[#E0E0E0] font-sans flex flex-col overflow-hidden select-none">
       
@@ -347,6 +379,45 @@ export default function App() {
 
         {/* Development & Server Docker runtime metrics */}
         <div className="flex items-center gap-2 md:gap-4 font-mono">
+          {user && (
+            <div className="flex items-center gap-2 bg-[#090B0E] border border-[#2D3139] rounded-lg p-1 px-2.5 shrink-0 select-none">
+              {user.avatarUrl ? (
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.name} 
+                  referrerPolicy="no-referrer"
+                  className="w-5 h-5 rounded-full object-cover border border-[#2D3139]" 
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-blue-600/25 border border-blue-500/35 text-blue-400 font-bold flex items-center justify-center text-[10px] uppercase font-sans">
+                  {user.name.charAt(0)}
+                </div>
+              )}
+              <div className="hidden sm:flex flex-col text-left justify-center min-w-0 font-sans">
+                <span className="text-[11px] font-semibold text-white leading-none tracking-tight truncate max-w-[80px]">
+                  {user.name}
+                </span>
+                <span className="text-[8px] text-blue-400 uppercase font-mono tracking-wider font-bold leading-none mt-0.5">
+                  {user.provider}
+                </span>
+              </div>
+              <button
+                id="header-logout-btn"
+                onClick={() => {
+                  setUser(null);
+                  setTerminalLogs((prev) => [
+                    ...prev,
+                    `[${new Date().toLocaleTimeString()}] [AUTH] Terminated session for "${user.name}" (sign-off).`
+                  ]);
+                }}
+                className="ml-1.5 p-1 rounded-md text-[#8B949E] hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <div className="hidden md:flex items-center gap-2 text-xs bg-[#161B22] border border-[#2D3139] rounded-lg px-2.5 py-1 text-[#3B82F6]">
             <span className="w-1.5 h-1.5 bg-[#3B82F6] rounded-full animate-ping"></span>
             <span>Docker: Running</span>
@@ -566,7 +637,6 @@ export default function App() {
                     <option value={TaskPriority.LOW} className="bg-[#090B0E]">Low</option>
                     <option value={TaskPriority.MEDIUM} className="bg-[#090B0E]">Medium</option>
                     <option value={TaskPriority.HIGH} className="bg-[#090B0E]">High</option>
-                    <option value={TaskPriority.HIGHT} className="bg-[#090B0E]">Hight</option>
                   </select>
                 </div>
               </div>
